@@ -1,0 +1,12 @@
+[package]
+name = "adorn"
+version = "0.1.0"
+authors = ["Manish Goregaokar <manishsmail@gmail.com>"]
+
+[lib]
+name = "adorn"
+crate_type = ["dylib"]
+
+
+[dev-dependencies.compiletest]
+git = "https://github.com/laumann/compiletest-rs.git"
