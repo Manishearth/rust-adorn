@@ -49,5 +49,29 @@ fn foo(a: &mut u8, b: &mut u8, (c, d): (u8, u8)) {
 
 In other words, calling `foo()` will actually call `bar()` wrapped around `foo()`.
 
-I intend to add support for decorating impl items and default trait methods too. I might also add support for automatically creating
-the `where` bound on a decorator function to make things easier.
+
+There is a `#[make_decorator]` attribute to act as sugar for creating decorators. For example,
+
+```rust
+#[make_decorator(f)]
+fn bar(a: &mut u8, b: &mut u8, (c, d): (u8, u8)) {
+    assert!(c == 0 && d == 0);
+    f(a, b, (4, 0)); // `f` was declared in the `make_decorator` annotation
+    *b = 100;
+}
+
+```
+
+desugars to 
+
+```rust
+fn bar<F>(f: F, a: &mut u8, b: &mut u8, (c, d): (u8, u8)) where F: Fn(&mut u8, &mut u8, (u8, u8)) {
+    assert!(c == 0 && d == 0);
+    f(a, b, (4, 0));
+    *b = 100;
+}
+```
+
+
+
+I intend to add support for decorating impl items and default trait methods too.
