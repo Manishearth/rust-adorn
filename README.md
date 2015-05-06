@@ -74,4 +74,4 @@ fn bar<F>(f: F, a: &mut u8, b: &mut u8, (c, d): (u8, u8)) where F: Fn(&mut u8, &
 
 
 
-I intend to add support for decorating impl items and default trait methods too.
+I intend to add support for decorating impl items and default trait methods too. Also passing arguments to the decorator; though rustc's current metaitem support limits us to strings (varargs are possible though).
