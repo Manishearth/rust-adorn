@@ -2,11 +2,16 @@
 name = "adorn"
 version = "0.1.0"
 authors = ["Manish Goregaokar <manishsmail@gmail.com>"]
+description = "A plugin to provide python-style decorators in Rust"
+repository = "https://github.com/Manishearth/rust-adorn"
+readme = "README.md"
+license = "MPL-2.0"
+keywords = ["decorators", "adorn", "plugin", "python"]
 
 [lib]
 name = "adorn"
-crate_type = ["dylib"]
+plugin = true
 
 
-[dev-dependencies.compiletest]
-git = "https://github.com/laumann/compiletest-rs.git"
+[dev-dependencies]
+compiletest_rs = "*"
