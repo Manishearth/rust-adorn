@@ -1,6 +1,6 @@
 [package]
 name = "adorn"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Manish Goregaokar <manishsmail@gmail.com>"]
 description = "A plugin to provide python-style decorators in Rust"
 repository = "https://github.com/Manishearth/rust-adorn"
