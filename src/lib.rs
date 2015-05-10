@@ -24,21 +24,42 @@ pub fn plugin_registrar(reg: &mut Registry) {
 }
 
 fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Annotatable {
-    let funcname = if let MetaList(_, ref l) = mitem.node {
-        if l.len() == 1 {
-            if let MetaWord(ref is) = l[0].node {
-               intern(&*is).ident() 
+    let (funcname, dec_args) = {
+        let err = || cx.span_err(sp, r##"#[adorn] should be of the format `#[adorn(foo)]` or
+                                         `#[adorn(foo(a = "arg1", a = "arg2"))], where `foo` is the decorator method"##);
+        if let MetaList(_, ref l) = mitem.node {
+            if l.len() == 1 {
+                match l[0].node {
+                    MetaWord(ref is) => (intern(&*is).ident(), vec![]),
+                    MetaList(ref is, ref list) => {
+                        let mut errored = false;
+                        let strs = list.iter().filter_map(|i| {
+                            if let MetaNameValue(_, ref l) = i.node {
+                                Some(l.node.clone())
+                            } else {
+                                errored = true;
+                                None
+                            }
+                        }).collect::<Vec<_>>();
+                        if errored {
+                            err();
+                            return item;
+                        }
+                        (intern(&*is).ident(), strs)
+                    }
+                    _ => {
+                        err();
+                        return item;
+                    }
+                }
             } else {
-                cx.span_err(sp, "#[adorn] should be of the format #[adorn(foo)], where `foo` is the decorator method");
-                return item;
+                err();
+                return item;         
             }
         } else {
-            cx.span_err(sp, "#[adorn] should be of the format #[adorn(foo)], where `foo` is the decorator method");
-            return item;         
+            err();
+            return item;
         }
-    } else {
-        cx.span_err(sp, "#[adorn] should be of the format #[adorn(foo)], where `foo` is the decorator method");
-        return item;
     };
     match item {
         Annotatable::Item(ref it) => {
@@ -48,6 +69,9 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                 let mut i = 0;
                 let mut exprs = Vec::with_capacity(decl.inputs.len()+1);
                 exprs.push(cx.expr_path(cx.path_ident(sp, id)));
+                for s in dec_args {
+                    exprs.push(cx.expr_lit(sp, s));
+                }
                 let maindecl = maindecl.map(|mut m| {
                     for ref mut arg in m.inputs.iter_mut() {
                         let arg_ident = intern(&format!("_arg_{}", i)[..]).ident();
