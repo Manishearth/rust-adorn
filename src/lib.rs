@@ -63,7 +63,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
     };
     match item {
         Annotatable::Item(ref it) => {
-            if let ItemFn(ref decl, unsafety, abi, ref generics, _) = it.node {
+            if let ItemFn(ref decl, unsafety, constness, abi, ref generics, _) = it.node {
                 let id = intern("_decorated_fn").ident();
                 let maindecl = decl.clone();
                 let mut i = 0;
@@ -87,7 +87,8 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                 let innerfn = it.clone();
                 let innerfn = innerfn.map(|mut inf| { inf.ident = id; inf });
                 let inner = cx.stmt_item(sp, innerfn);
-                let newfn = ItemFn(maindecl, unsafety, abi, generics.clone(), cx.block(sp, vec![inner], Some(call)));
+                let newfn = ItemFn(maindecl, unsafety, constness, abi, generics.clone(),
+                                   cx.block(sp, vec![inner], Some(call)));
                 Annotatable::Item(cx.item(sp, ident, attrs, newfn))
             } else {
                 cx.span_err(sp, "#[adorn] only allowed on functions");
@@ -123,7 +124,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
     };
     match item {
         Annotatable::Item(ref it) => {
-            if let ItemFn(ref decl, unsafety, abi, ref generics, ref blk) = it.node {
+            if let ItemFn(ref decl, unsafety, constness, abi, ref generics, ref blk) = it.node {
                 let ty_ident = intern("_F").ident();
                 let ty = cx.ty_ident(sp, ty_ident);
                 let output = if let Return(ref t) = decl.output {
@@ -155,7 +156,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
                 let mut inputs = decl.inputs.clone();
                 inputs.insert(0, cx.arg(sp, funcname, ty));
                 let decl = cx.fn_decl(inputs, output.unwrap_or(cx.ty(sp, TyTup(Vec::new()))));
-                let func = ItemFn(decl, unsafety, abi, gen, blk.clone());
+                let func = ItemFn(decl, unsafety, constness, abi, gen, blk.clone());
                 Annotatable::Item(cx.item(sp, it.ident, it.attrs.clone(), func))
             } else {
                 cx.span_err(sp, "#[make_decorator] only allowed on functions");
