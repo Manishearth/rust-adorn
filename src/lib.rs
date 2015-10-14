@@ -30,7 +30,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
         if let MetaList(_, ref l) = mitem.node {
             if l.len() == 1 {
                 match l[0].node {
-                    MetaWord(ref is) => (intern(&*is).ident(), vec![]),
+                    MetaWord(ref is) => (Ident::with_empty_ctxt(intern(&*is)), vec![]),
                     MetaList(ref is, ref list) => {
                         let mut errored = false;
                         let strs = list.iter().filter_map(|i| {
@@ -45,7 +45,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                             err();
                             return item;
                         }
-                        (intern(&*is).ident(), strs)
+                        (Ident::with_empty_ctxt(intern(&*is)), strs)
                     }
                     _ => {
                         err();
@@ -64,7 +64,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
     match item {
         Annotatable::Item(ref it) => {
             if let ItemFn(ref decl, unsafety, constness, abi, ref generics, _) = it.node {
-                let id = intern("_decorated_fn").ident();
+                let id = Ident::with_empty_ctxt(intern("_decorated_fn"));
                 let maindecl = decl.clone();
                 let mut i = 0;
                 let mut exprs = Vec::with_capacity(decl.inputs.len()+1);
@@ -74,7 +74,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                 }
                 let maindecl = maindecl.map(|mut m| {
                     for ref mut arg in m.inputs.iter_mut() {
-                        let arg_ident = intern(&format!("_arg_{}", i)[..]).ident();
+                        let arg_ident = Ident::with_empty_ctxt(intern(&format!("_arg_{}", i)[..]));
                         arg.pat = cx.pat_ident(sp, arg_ident);
                         exprs.push(cx.expr_ident(sp, arg_ident));
                         i += 1;
@@ -106,7 +106,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
     let funcname = if let MetaList(_, ref l) = mitem.node {
         if l.len() == 1 {
             if let MetaWord(ref is) = l[0].node {
-               intern(&*is).ident() 
+               Ident::with_empty_ctxt(intern(&*is))
             } else {
                 cx.span_err(sp, "#[make_decorator] should be of the format #[make_decorator(f)], where `f`\
                                  is the identifier for the extra function argument created");
@@ -125,7 +125,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
     match item {
         Annotatable::Item(ref it) => {
             if let ItemFn(ref decl, unsafety, constness, abi, ref generics, ref blk) = it.node {
-                let ty_ident = intern("_F").ident();
+                let ty_ident = Ident::with_empty_ctxt(intern("_F"));
                 let ty = cx.ty_ident(sp, ty_ident);
                 let output = if let Return(ref t) = decl.output {
                     Some(t.clone())
@@ -141,7 +141,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
                     span: sp,
                     global: false,
                     segments: vec![PathSegment {
-                        identifier: intern("Fn").ident(),
+                        identifier: Ident::with_empty_ctxt(intern("Fn")),
                         parameters: ParenthesizedParameters(paramdata)
                     }],
                 };
