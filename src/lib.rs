@@ -6,8 +6,9 @@
 extern crate syntax;
 #[macro_use]
 extern crate rustc;
+extern crate rustc_plugin;
 
-use rustc::plugin::Registry;
+use rustc_plugin::Registry;
 use  syntax::ext::base::SyntaxExtension;
 
 use syntax::ast::*;
@@ -142,7 +143,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
                     global: false,
                     segments: vec![PathSegment {
                         identifier: Ident::with_empty_ctxt(intern("Fn")),
-                        parameters: ParenthesizedParameters(paramdata)
+                        parameters: PathParameters::Parenthesized(paramdata)
                     }],
                 };
                 let typaram = cx.typaram(sp, ty_ident, OwnedSlice::from_vec(vec![cx.typarambound(path)]), None);
