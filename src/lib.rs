@@ -16,26 +16,26 @@ use syntax::ptr::P;
 use syntax::codemap::Span;
 use syntax::ext::base::{ExtCtxt, Annotatable};
 use syntax::ext::build::AstBuilder;
-use syntax::parse::token::intern;
+use syntax::symbol::Symbol;
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut Registry) {
-    reg.register_syntax_extension(intern("adorn"), SyntaxExtension::MultiModifier(box adorn));
-    reg.register_syntax_extension(intern("make_decorator"), SyntaxExtension::MultiModifier(box make_decorator));
+    reg.register_syntax_extension(Symbol::intern("adorn"), SyntaxExtension::MultiModifier(box adorn));
+    reg.register_syntax_extension(Symbol::intern("make_decorator"), SyntaxExtension::MultiModifier(box make_decorator));
 }
 
 fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Annotatable {
     let (funcname, dec_args) = {
         let err = || cx.span_err(sp, r##"#[adorn] should be of the format `#[adorn(foo)]` or
                                          `#[adorn(foo(a = "arg1", a = "arg2"))], where `foo` is the decorator method"##);
-        if let MetaItemKind::List(_, ref l) = mitem.node {
+        if let MetaItemKind::List(ref l) = mitem.node {
             if l.len() == 1 {
-                match l[0].node {
-                    MetaItemKind::Word(ref is) => (Ident::with_empty_ctxt(intern(&*is)), vec![]),
-                    MetaItemKind::List(ref is, ref list) => {
+                match l[0].meta_item().map(|mi| (mi.name, &mi.node)) {
+                    Some((is, &MetaItemKind::Word)) => (Ident::with_empty_ctxt(is), vec![]),
+                    Some((is, &MetaItemKind::List(ref list))) => {
                         let mut errored = false;
                         let strs = list.iter().filter_map(|i| {
-                            if let MetaItemKind::NameValue(_, ref l) = i.node {
+                            if let Some(&MetaItemKind::NameValue(ref l)) = i.meta_item().map(|mi| &mi.node) {
                                 Some(l.node.clone())
                             } else {
                                 errored = true;
@@ -46,7 +46,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                             err();
                             return item;
                         }
-                        (Ident::with_empty_ctxt(intern(&*is)), strs)
+                        (Ident::with_empty_ctxt(is), strs)
                     }
                     _ => {
                         err();
@@ -55,7 +55,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                 }
             } else {
                 err();
-                return item;         
+                return item;
             }
         } else {
             err();
@@ -65,7 +65,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
     match item {
         Annotatable::Item(ref it) => {
             if let ItemKind::Fn(ref decl, unsafety, constness, abi, ref generics, _) = it.node {
-                let id = Ident::with_empty_ctxt(intern("_decorated_fn"));
+                let id = Ident::with_empty_ctxt(Symbol::intern("_decorated_fn"));
                 let maindecl = decl.clone();
                 let mut i = 0;
                 let mut exprs = Vec::with_capacity(decl.inputs.len()+1);
@@ -75,7 +75,7 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                 }
                 let maindecl = maindecl.map(|mut m| {
                     for ref mut arg in m.inputs.iter_mut() {
-                        let arg_ident = Ident::with_empty_ctxt(intern(&format!("_arg_{}", i)[..]));
+                        let arg_ident = Ident::with_empty_ctxt(Symbol::intern(&format!("_arg_{}", i)[..]));
                         arg.pat = cx.pat_ident(sp, arg_ident);
                         exprs.push(cx.expr_ident(sp, arg_ident));
                         i += 1;
@@ -83,13 +83,14 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
                     m
                 });
 
-                let call = cx.expr_call_ident(sp, funcname, exprs);
+                let callexpr = cx.expr_call_ident(sp, funcname, exprs);
+                let call = cx.stmt_expr(callexpr);
                 let (ident, attrs) = (it.ident.clone(), it.attrs.clone());
                 let innerfn = it.clone();
                 let innerfn = innerfn.map(|mut inf| { inf.ident = id; inf });
                 let inner = cx.stmt_item(sp, innerfn);
                 let newfn = ItemKind::Fn(maindecl, unsafety, constness, abi, generics.clone(),
-                                   cx.block(sp, vec![inner], Some(call)));
+                                   cx.block(sp, vec![inner, call]));
                 Annotatable::Item(cx.item(sp, ident, attrs, newfn))
             } else {
                 cx.span_err(sp, "#[adorn] only allowed on functions");
@@ -104,10 +105,10 @@ fn adorn(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Ann
 }
 
 fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatable) -> Annotatable {
-    let funcname = if let MetaItemKind::List(_, ref l) = mitem.node {
+    let funcname = if let MetaItemKind::List(ref l) = mitem.node {
         if l.len() == 1 {
-            if let MetaItemKind::Word(ref is) = l[0].node {
-               Ident::with_empty_ctxt(intern(&*is))
+            if let Some((is, &MetaItemKind::Word)) = l[0].meta_item().map(|mi| (mi.name, &mi.node)) {
+               Ident::with_empty_ctxt(Symbol::intern(&*is.as_str()))
             } else {
                 cx.span_err(sp, "#[make_decorator] should be of the format #[make_decorator(f)], where `f`\
                                  is the identifier for the extra function argument created");
@@ -116,7 +117,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
         } else {
             cx.span_err(sp, "#[make_decorator] should be of the format #[make_decorator(f)], where `f`\
                              is the identifier for the extra function argument created");
-            return item;         
+            return item;
         }
     } else {
             cx.span_err(sp, "#[make_decorator] should be of the format #[make_decorator(f)], where `f`\
@@ -126,7 +127,7 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
     match item {
         Annotatable::Item(ref it) => {
             if let ItemKind::Fn(ref decl, unsafety, constness, abi, ref generics, ref blk) = it.node {
-                let ty_ident = Ident::with_empty_ctxt(intern("_F"));
+                let ty_ident = Ident::with_empty_ctxt(Symbol::intern("_F"));
                 let ty = cx.ty_ident(sp, ty_ident);
                 let output = if let FunctionRetTy::Ty(ref t) = decl.output {
                     Some(t.clone())
@@ -142,14 +143,15 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
                     span: sp,
                     global: false,
                     segments: vec![PathSegment {
-                        identifier: Ident::with_empty_ctxt(intern("Fn")),
+                        identifier: Ident::with_empty_ctxt(Symbol::intern("Fn")),
                         parameters: PathParameters::Parenthesized(paramdata)
                     }],
                 };
-                let typaram = cx.typaram(sp, ty_ident, TyParamBounds::from_vec(vec![cx.typarambound(path)]), None);
+                let typaram = cx.typaram(sp, ty_ident, vec![], TyParamBounds::from_vec(vec![cx.typarambound(path)]), None);
                 let mut bounds = generics.ty_params.clone().into_vec();
                 bounds.push(typaram);
                 let gen = Generics {
+                    span: sp,
                     lifetimes: generics.lifetimes.clone(),
                     ty_params: P::<[TyParam]>::from_vec(bounds),
                     where_clause: generics.where_clause.clone(),
