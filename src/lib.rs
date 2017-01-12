@@ -141,10 +141,9 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
                 };
                 let path = Path {
                     span: sp,
-                    global: false,
                     segments: vec![PathSegment {
                         identifier: Ident::with_empty_ctxt(Symbol::intern("Fn")),
-                        parameters: PathParameters::Parenthesized(paramdata)
+                        parameters: Some(P(PathParameters::Parenthesized(paramdata)))
                     }],
                 };
                 let typaram = cx.typaram(sp, ty_ident, vec![], TyParamBounds::from_vec(vec![cx.typarambound(path)]), None);
