@@ -2,14 +2,12 @@
 
 #![feature(rustc_private)]
 
-#[macro_use]
 extern crate syntax;
-#[macro_use]
 extern crate rustc;
 extern crate rustc_plugin;
 
 use rustc_plugin::Registry;
-use  syntax::ext::base::SyntaxExtension;
+use syntax::ext::base::SyntaxExtension;
 
 use syntax::ast::*;
 use syntax::ptr::P;
@@ -146,13 +144,13 @@ fn make_decorator(cx: &mut ExtCtxt, sp: Span, mitem: &MetaItem, item: Annotatabl
                         parameters: Some(P(PathParameters::Parenthesized(paramdata)))
                     }],
                 };
-                let typaram = cx.typaram(sp, ty_ident, vec![], TyParamBounds::from_vec(vec![cx.typarambound(path)]), None);
-                let mut bounds = generics.ty_params.clone().into_vec();
+                let typaram = cx.typaram(sp, ty_ident, vec![], vec![cx.typarambound(path)], None);
+                let mut bounds = generics.ty_params.clone();
                 bounds.push(typaram);
                 let gen = Generics {
                     span: sp,
                     lifetimes: generics.lifetimes.clone(),
-                    ty_params: P::<[TyParam]>::from_vec(bounds),
+                    ty_params: bounds,
                     where_clause: generics.where_clause.clone(),
                 };
                 let mut inputs = decl.inputs.clone();
