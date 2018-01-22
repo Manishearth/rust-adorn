@@ -1,6 +1,8 @@
+#![feature(proc_macro)]
 
-#![feature(plugin, custom_attribute)]
-#![plugin(adorn)]
+extern crate adorn;
+
+use adorn::{adorn, make_decorator};
 
 #[adorn(bar)]
 fn foo(a: &mut u8, b: &mut u8, (c, _): (u8, u8)) {
