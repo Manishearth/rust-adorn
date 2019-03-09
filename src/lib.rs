@@ -1,5 +1,3 @@
-#![feature(proc_macro)]
-
 extern crate proc_macro;
 #[macro_use] extern crate quote;
 use std::mem;
@@ -19,7 +17,7 @@ struct Args {
 
 impl Synom for Args {
     named!(parse -> Self,
-        map!(parens!(do_parse!(
+        do_parse!(
             name: syn!(Ident) >>
             extra: option!(
                 map!(parens!(Punctuated::<Lit, Token![,]>::parse_terminated_nonempty),
@@ -30,7 +28,7 @@ impl Synom for Args {
                 extra: extra.unwrap_or(vec!())
             })
         )
-    ), |(_parens, args)| args));
+    );
 }
 
 #[proc_macro_attribute]
