@@ -9,8 +9,7 @@ Example usage:
 
 
 ```rust
-#![feature(plugin, custom_attribute)]
-#![plugin(adorn)]
+use adorn::{adorn, make_decorator};
 
 #[adorn(bar)]
 fn foo(a: &mut u8, b: &mut u8, (c, _): (u8, u8)) {

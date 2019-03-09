@@ -1,5 +1,3 @@
-#![feature(proc_macro)]
-
 extern crate adorn;
 
 use adorn::adorn;
