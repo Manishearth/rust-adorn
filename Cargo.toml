@@ -10,6 +10,7 @@ version = "0.3.0"
 
 [dependencies]
 quote = "0.4"
+proc-macro2 = "0.2.3"
 
 [dependencies.syn]
 features = ["full", "extra-traits"]
