@@ -1,21 +1,21 @@
 [package]
-authors     = ["Manish Goregaokar <manishsmail@gmail.com>"]
+authors = ["Manish Goregaokar <manishsmail@gmail.com>"]
 description = "A plugin to provide python-style decorators in Rust"
-keywords    = ["decorators", "adorn", "plugin", "python"]
-license     = "MPL-2.0"
-name        = "adorn"
-readme      = "README.md"
-repository  = "https://github.com/Manishearth/rust-adorn"
-version     = "0.4.0"
+keywords = ["decorators", "adorn", "plugin", "python"]
+license = "MPL-2.0"
+name = "adorn"
+readme = "README.md"
+repository = "https://github.com/Manishearth/rust-adorn"
+version = "0.4.0"
 
 [dependencies]
-quote       = "0.4"
+quote = "0.4"
 proc-macro2 = "0.2.3"
 
 [dependencies.syn]
 features = ["full", "extra-traits"]
-version  = "0.12"
+version = "0.12"
 
 [lib]
-name       = "adorn"
+name = "adorn"
 proc-macro = true
