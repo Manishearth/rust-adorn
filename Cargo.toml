@@ -6,7 +6,7 @@ license = "MPL-2.0"
 name = "adorn"
 readme = "README.md"
 repository = "https://github.com/Manishearth/rust-adorn"
-version = "0.3.0"
+version = "0.4.0"
 
 [dependencies]
 quote = "0.4"
